@@ -52,7 +52,7 @@ class DiscordBot(commands.Bot):
                     if len(dep_msg.embeds[0].fields) > 0:
                         embed = dep_msg.embeds[0].to_dict()
                         bank_amount = re.sub(r'\W+','', embed['fields'][2]['value'])
-                        if int(bank_amount) >= int(1e6):
+                        if int(bank_amount) >= int(5e6):
                             print(f"rob myself initiated with bank [{bank_amount}]")
                             await asyncio.sleep(5.0)
                             self.unheisted = False
