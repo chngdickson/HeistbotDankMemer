@@ -22,7 +22,7 @@ with open("config/"+get_str+".yaml") as file:
 TOKEN, CH_DEP , MAIN_CH_DEP = variabless['token'], variabless['channel_to_dep'] , variabless['main_account_channel']
 DANKMEMER_ID , NO_HEIST_SERVERS= 270904126974590976 , [682809584985178135, 935840269692194817]
 HEISTLABEL, CONFIRMLABEL , BEING_HEISTED= "JOIN HEIST", "Confirm", "Your bank is being heisted!"
-
+MAIN_USER_ID = 271259167732400128
 
 # --- Constants --- #
 class DiscordBot(commands.Bot):
@@ -43,21 +43,25 @@ class DiscordBot(commands.Bot):
         await send_text(self,self.ch_cmd,f"Heist is {ready}.")
         return
 
-    @property
     async def rob_myself(self)-> None:
-        await with_dep_msg(self, CH_DEP, "pls dep all")
-        if str(self.user).startswith("mina") or str(self.user).startswith("applebong"):
-            dep_msg = await wait_for_msg(bot=self, ch=CH_DEP, check_func=lambda m: m.author.id == DANKMEMER_ID and m.channel.id == CH_DEP)
-            if dep_msg is not None and len(dep_msg.embeds) > 0:
-                if len(dep_msg.embeds[0].fields) > 0:
-                    embed = dep_msg.embeds[0].to_dict()
-                    bank_amount = re.sub(r'\W+','', embed['fields'][2]['value'])
-                    if int(bank_amount) >= int(5e6):
-                        print(f"rob myself initiated with bank [{bank_amount}]")
-                        await asyncio.sleep(5.0)
-                        self.unheisted = False
-                        await send_text(self, MAIN_CH_DEP, f">mina_rob {CH_DEP}")
-                    else: await send_text(self, CH_DEP, f"not robbing self, bank amount {bank_amount} < {int(5e6)}")
+        if self.user.id != MAIN_USER_ID:
+            print("This is run")
+            dep_msg = await with_dep_msg(self, CH_DEP, "pls dep all")
+            if dep_msg is not None :
+                if len(dep_msg.embeds) > 0:
+                    if len(dep_msg.embeds[0].fields) > 0:
+                        embed = dep_msg.embeds[0].to_dict()
+                        bank_amount = re.sub(r'\W+','', embed['fields'][2]['value'])
+                        if int(bank_amount) >= int(1e6):
+                            print(f"rob myself initiated with bank [{bank_amount}]")
+                            await asyncio.sleep(5.0)
+                            self.unheisted = False
+                            
+                            await send_text(self, MAIN_CH_DEP, f">mina_rob {CH_DEP}")
+                        else: await send_text(self, CH_DEP, f"not robbing self, bank amount {bank_amount} < {int(5e6)}")
+            else:
+                await with_dep_msg(self, CH_DEP, "pls with 2k")
+                return await self.rob_myself()
 
     async def heist(self, 
                     compo_index:discord.components.Button, 
@@ -109,19 +113,19 @@ class DiscordBot(commands.Bot):
                 if message.content.startswith(">toggle heist"):
                     await self.toggle_heist
                 if message.content.startswith(">rob"):
-                    await self.rob_myself
+                    await self.rob_myself()
             return
 
         if not in_dms(message):
             # if it is not in dank memer community server
-            if message.guild.id == NO_HEIST_SERVERS[1]:
+            if message.guild.id == NO_HEIST_SERVERS[0]: 
                 return
         
         if message.author.id == DANKMEMER_ID:
 
             ## RECEIVED MONEY FROM HEIST
             if message.content.startswith("Amazing job everybody"):
-                await self.rob_myself
+                await self.rob_myself()
                     
                 
             embeds = message.embeds

@@ -24,13 +24,13 @@ async def dep_money(bot, channel_to_dep):
         print('problems found')
         return
     
-async def wait_for_msg(bot, ch, check_func = None, timeout=20):
+async def wait_for_msg(bot, ch:int, name:str, check_func = None, timeout:float=20.0):
     if check_func is None:
-        check_func = lambda m: m.author.id == bot.dank_memer_id and m.channel == ch
+        check_func = lambda m: m.author.id == bot.dank_memer_id and m.channel.id == ch
     try:
         return await bot.wait_for('message', check = check_func, timeout=timeout)
     except asyncio.TimeoutError:
-        print("wait for msg timed out")
+        print(f"wait for msg timed out at func: [{name}]")
         return None
 # Use alcohol
 
@@ -62,7 +62,8 @@ async def use_phone(bot, ch):
         await ch_cmd.send("pls use phone")
         msg = await wait_for_msg(
             bot,
-            ch_cmd,
+            ch,
+            name = "use_phone",
             check_func = lambda m:
                 m.author.id == bot.dank_memer_id and m.channel == ch_cmd 
                 and (str(m.content).startswith(f"<@{bot.user.id}>") or str(m.content).lower().startswith("you don't"))
@@ -76,14 +77,14 @@ async def use_phone(bot, ch):
         some_dict = {0:"fok me", 1: "Not like this", 2: "mtherfker lemme buy my phone"}
         if msg is not None and str(msg.content).lower().startswith("you don't own"):
             await ch_cmd.send("pls with 10k")
-            await wait_for_msg(bot, ch_cmd)
+            await wait_for_msg(bot, ch, name="use_phone")
             await ch_cmd.send(some_dict[rand.randint(0,2)])
             await asyncio.sleep(60)
             await ch_cmd.send("pls with 10k")
-            await wait_for_msg(bot, ch_cmd)
+            await wait_for_msg(bot, ch, name="use_phone")
             await asyncio.sleep(rand.uniform(0.2,1.0))
             await ch_cmd.send("pls buy phone")
-            await wait_for_msg(bot, ch_cmd)
+            await wait_for_msg(bot, ch, name="use_phone")
             await asyncio.sleep(rand.uniform(0.2,1.0))
             return await use_phone(bot, ch)
         else:
@@ -121,24 +122,26 @@ async def get_channel_link(bot, ch_link, ch):
     ch_cmd = bot.get_channel(ch)
     await ch_cmd.send(ch_link)
     
-async def with_dep_msg(bot, ch, message, n=0):
+async def with_dep_msg(bot, ch:int, message, n=0):
     if n>=4:
         print(n)
         return
     ch_cmd = bot.get_channel(ch)
     await ch_cmd.send(message)
-    msg = await wait_for_msg(bot, ch_cmd, timeout=2.0)
+    msg = await wait_for_msg(bot, ch, name="with_dep_msg", timeout=2.0)
     if msg is not None:
         if len(msg.embeds)>0:
             embed = msg.embeds[0]
             if embed.description:
+                if "heist" in embed.description.lower():
+                    return None
                 string = re.sub(r'[^a-zA-Z.\d\s]', '', str(embed.description))
                 text_lst = string.split(" ")
                 index = text_lst.index("in")
                 await asyncio.sleep(float(text_lst[index + 2]))
                 return await with_dep_msg(bot, ch, message, n+1)
             else:
-                return None
+                return msg
         else: return None
     else: return await with_dep_msg(bot, ch, message, n+1)
 
@@ -146,32 +149,57 @@ async def with_dep_msg(bot, ch, message, n=0):
 def in_dms(message):
     return not message.guild
 
-async def pls_rob(bot, ch_cmd, alt_id):
+async def pls_rob(bot, ch:int, alt_id:int) -> float:
+    ch_cmd = bot.get_channel(ch)
     await ch_cmd.send(f"pls rob {alt_id}")
-    heist_msg = await wait_for_msg(bot, ch_cmd, timeout=2)
+    heist_msg = await wait_for_msg(bot, ch, name="plsrob", timeout=2.5)
     if heist_msg is not None:
-        if str(heist_msg.content).lower().startswith("lol"):
-            return await pls_rob(bot, ch_cmd, alt_id)
+        msg_content = str(heist_msg.content).lower()
+        """Robbed Successfully"""
+        if msg_content.startswith("this user"):
+            return 0.0
+        if msg_content.startswith("you stole"):
+            if "portion!" in msg_content: return float(5.0*60.0)
+            else: return 0.0
+        if msg_content.startswith("the victim"):
+            return 0.0
+        
+        """Failed to rob"""
+        # If failed to rob, return false
+        if msg_content.startswith("you were caught"):
+            return 31.0
+        # LOL! They are doing something else with their stuff rn, wait for a bit
+        if msg_content.startswith("lol"):
+            return await pls_rob(bot, ch, alt_id)
+        # Currently Heisting, so we have to return 1 min of time
+        elif len(heist_msg.embeds) > 0:
+            return 90.0
         else:
-            return heist_msg
+            await ch_cmd.send(f"pls rob unexpected statement {msg_content}")
+            return 0.0
+    else:
+        return await pls_rob(bot, ch, alt_id)
 
 
 async def rob_my_alt(bot, ch, alt_aut, n=0):
-    sleep_time = 31
-    if n >= 5:
+    if n >= 10:
         return
     ch_cmd = bot.get_channel(ch)
     await ch_cmd.send("pls with 100k")
-    await wait_for_msg(bot, ch_cmd, timeout=5)
+    await wait_for_msg(bot, ch, name = "rob_my_alt", timeout=5)
     await ch_cmd.send(">withdraw")
-    await wait_for_msg(bot, ch_cmd, check_func=lambda m: m.author == alt_aut and m.channel == ch_cmd and m.content.startswith(">steal me"), timeout=50)
+    await wait_for_msg(bot, ch, name="steal me", check_func=lambda m: m.author == alt_aut and m.channel == ch_cmd and m.content.startswith(">steal me"), timeout=5.0)
     await asyncio.sleep(0.5)
-    heist_msg = await pls_rob(bot, ch_cmd, alt_aut)
-    await ch_cmd.send(">deposit")
+    
+    sleep_time = await pls_rob(bot, ch, alt_aut)
     await ch_cmd.send("pls dep all")
-    if heist_msg is not None and str(heist_msg.content).lower().startswith("you stole"):
+    await ch_cmd.send(">deposit")
+    await ch_cmd.send(f"rob sleep time: [{sleep_time}]")
+    if sleep_time < 1.0:
+        # If successful rob, perform these operations
+        # Else, try again
         await ch_cmd.send(">toggle heist")
-        return
+        return 
     else:
         await asyncio.sleep(sleep_time)
         await rob_my_alt(bot, ch, alt_aut, n+1)
