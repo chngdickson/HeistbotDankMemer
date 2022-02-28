@@ -1,0 +1,20 @@
+{
+    "python.pythonPath": "C:\\Users\\Dicks\\anaconda3\\envs\\discord2\\python.exe",
+    "python.analysis.extraPaths": ["C:\\Users\\Dicks\\anaconda3\\envs\\discord2\\Lib\\site-packages\\discord\\ext\\commands"],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintArgs": [
+        "--disable=all",
+        "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode"
+    ],
+    "python.linting.pycodestyleArgs": ["--max-line-length=100"],
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyCategorySeverity.error": "Warning",
+    "python.linting.mypyArgs": [
+        "--ignore-missing-imports",
+        "--follow-imports=silent",
+        "--show-column-numbers",
+        "--disallow-untyped-defs",
+        "--allow-untyped-calls"
+    ],
+}
