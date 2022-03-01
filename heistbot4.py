@@ -19,10 +19,9 @@ get_str = args.get_config
 with open("config/"+get_str+".yaml") as file:
     variabless = yaml.load(file, Loader=yaml.FullLoader)
 
-TOKEN, CH_DEP , MAIN_CH_DEP = variabless['token'], variabless['channel_to_dep'] , variabless['main_account_channel']
+TOKEN, CH_DEP , MAIN_CH_DEP, LOG_CH = variabless['token'], variabless['channel_to_dep'] , variabless['main_account_channel'], variabless['log_channel']
 DANKMEMER_ID , NO_HEIST_SERVERS= 270904126974590976 , [682809584985178135, 935840269692194817]
 HEISTLABEL, CONFIRMLABEL , BEING_HEISTED= "JOIN HEIST", "Confirm", "Your bank is being heisted!"
-MAIN_USER_ID = 271259167732400128
 
 # --- Constants --- #
 class DiscordBot(commands.Bot):
@@ -44,9 +43,11 @@ class DiscordBot(commands.Bot):
         return
 
     async def rob_myself(self)-> None:
-        if self.user.id != MAIN_USER_ID:
-            print("This is run")
-            dep_msg = await with_dep_msg(self, CH_DEP, "pls dep all")
+        dep_msg = await with_dep_msg(self, CH_DEP, "pls dep all")
+        if CH_DEP == MAIN_CH_DEP:
+            # Return if this is main account.
+            return None
+        else:
             if dep_msg is not None :
                 if len(dep_msg.embeds) > 0:
                     if len(dep_msg.embeds[0].fields) > 0:
@@ -54,6 +55,7 @@ class DiscordBot(commands.Bot):
                         bank_amount = re.sub(r'\W+','', embed['fields'][2]['value'])
                         if int(bank_amount) >= int(5e6):
                             print(f"rob myself initiated with bank [{bank_amount}]")
+                            await send_text(self, LOG_CH, f"Gained 5MIL from {self.user}")
                             await asyncio.sleep(5.0)
                             self.unheisted = False
                             
@@ -72,9 +74,14 @@ class DiscordBot(commands.Bot):
             try:
                 await compo_index.click()
                 try:
-                    dank_msg= await self.wait_for('message', check= lambda m: m.author.id == DANKMEMER_ID and m.channel == message.channel, timeout=20)
+                    dank_msg= await self.wait_for('message', check= lambda m: m.author.id == DANKMEMER_ID and m.channel == message.channel, timeout=2.5)
                 except (asyncio.TimeoutError,asyncio.CancelledError) as error:
-                    print(error)
+                    print('error',error, n)
+                    return await self.heist(compo_index, message, n+1)
+                
+                if len(dank_msg.embeds) > 0: 
+                    print(f"Tried clicking [n={n}], embed")
+                    await asyncio.sleep(1.0)
                     return await self.heist(compo_index, message, n+1)
                 content = str(dank_msg.content).lower()
                 if content.startswith("you successfully") or "joined" in content:
@@ -180,7 +187,7 @@ class DiscordBot(commands.Bot):
                                 await dep_money(self, CH_DEP)
                                 print("Heist Found")
                                 if await self.heist(message.components[0].children[index], message):
-                                    print(f"clicked on label - {HEISTLABEL}, \nJOINED HEIST at [{datetime.datetime.now().strftime('%H:%M')}]")
+                                    print(f"{self.user} clicked on label - {HEISTLABEL}, \nJOINED HEIST at [{datetime.datetime.now().strftime('%H:%M')}]")
                                     
                                     # Toggle heist only if heist is activated
                                     if self.unheisted: 

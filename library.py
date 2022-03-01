@@ -94,13 +94,9 @@ async def use_phone(bot, ch):
     except discord.errors.Forbidden:
         return False
 
-
-
 def check_description(m):
     #m.components[0].children[1].click()
     return m.channel == 935840270157754370 and m.author.id == 270904126974590976
-   
-       
 
 async def check_life(bot, ch):
     try:
@@ -137,14 +133,17 @@ async def with_dep_msg(bot, ch:int, message, n=0):
                     return None
                 string = re.sub(r'[^a-zA-Z.\d\s]', '', str(embed.description))
                 text_lst = string.split(" ")
-                index = text_lst.index("in")
-                await asyncio.sleep(float(text_lst[index + 2]))
+                try: 
+                    index = text_lst.index("in")
+                    sleep_time = float(text_lst[index+2])
+                except ValueError:
+                    sleep_time = float(1.5)
+                await asyncio.sleep(sleep_time)
                 return await with_dep_msg(bot, ch, message, n+1)
             else:
                 return msg
         else: return None
     else: return await with_dep_msg(bot, ch, message, n+1)
-
 
 def in_dms(message):
     return not message.guild
@@ -156,9 +155,8 @@ async def pls_rob(bot, ch:int, alt_id:int) -> float:
     if heist_msg is not None:
         msg_content = str(heist_msg.content).lower()
         """Robbed Successfully"""
-        if msg_content.startswith("this user"):
-            return 0.0
         if msg_content.startswith("you stole"):
+            # If only robbed a portion means we haven't fully robbed
             if "portion!" in msg_content: return float(5.0*60.0)
             else: return 0.0
         if msg_content.startswith("the victim"):
@@ -166,6 +164,8 @@ async def pls_rob(bot, ch:int, alt_id:int) -> float:
         
         """Failed to rob"""
         # If failed to rob, return false
+        if msg_content.startswith("this user"):
+            return float(5.0*60.0)
         if msg_content.startswith("you were caught"):
             return 31.0
         # LOL! They are doing something else with their stuff rn, wait for a bit
@@ -179,7 +179,6 @@ async def pls_rob(bot, ch:int, alt_id:int) -> float:
             return 0.0
     else:
         return await pls_rob(bot, ch, alt_id)
-
 
 async def rob_my_alt(bot, ch, alt_aut, n=0):
     if n >= 10:
@@ -195,7 +194,7 @@ async def rob_my_alt(bot, ch, alt_aut, n=0):
     await ch_cmd.send("pls dep all")
     await ch_cmd.send(">deposit")
     await ch_cmd.send(f"rob sleep time: [{sleep_time}]")
-    if sleep_time < 1.0:
+    if float(sleep_time) < float(1.0):
         # If successful rob, perform these operations
         # Else, try again
         await ch_cmd.send(">toggle heist")
