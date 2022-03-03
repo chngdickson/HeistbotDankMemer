@@ -175,7 +175,7 @@ async def pls_rob(bot, ch:int, alt_id:int) -> float:
         elif len(heist_msg.embeds) > 0:
             return 90.0
         else:
-            await ch_cmd.send(f"pls rob unexpected statement {msg_content}")
+            await ch_cmd.send(f"unexpected statement [pls rob] {msg_content}")
             return 0.0
     else:
         return await pls_rob(bot, ch, alt_id)
@@ -197,7 +197,9 @@ async def rob_my_alt(bot, ch, alt_aut, n=0):
     if float(sleep_time) < float(1.0):
         # If successful rob, perform these operations
         # Else, try again
-        await ch_cmd.send(">toggle heist")
+        await ch_cmd.send(">selfrob false")
+        await asyncio.sleep(0.5)
+        await ch_cmd.send(">toggle heist true")
         return 
     else:
         await asyncio.sleep(sleep_time)

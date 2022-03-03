@@ -5,7 +5,7 @@ import time
 
 
 
-def run(config:str):
+def run(config:str)-> None:
     filename = "heistbot4.py"
     while True:
         p = subprocess.Popen(f"python {filename} {config}", shell=True)
@@ -16,7 +16,7 @@ def run(config:str):
         
 if __name__ == "__main__":
     multi = []
-    configs = ['bot1', 'bot2', 'bot3']
+    configs = ['bot1', 'bot3']
     try:
         for config in configs:
             one_process = multiprocessing.Process(target=run, args=(config,))

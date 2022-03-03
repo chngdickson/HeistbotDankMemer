@@ -30,14 +30,20 @@ class DiscordBot(commands.Bot):
         self.ch_cmd = ch_cmd
         self.unheisted = True
         self.dank_memer_id = DANKMEMER_ID
+        self.robbing = False
+        # Self.robbing parameter is used to prevent joining heist when self.robbing
         return
 
 
     # --- Self-Made --- #
     # --- Commands --- #
-    @property
-    async def toggle_heist(self) -> None: 
-        self.unheisted = not self.unheisted
+    async def toggle_heist(self, input_value = None) -> None:
+        if self.robbing: 
+            return
+        if input_value is not None:
+            self.unheisted = input_value
+        else:
+            self.unheisted = not self.unheisted
         ready = "ready" if self.unheisted else "not ready"
         await send_text(self,self.ch_cmd,f"Heist is {ready}.")
         return
@@ -56,9 +62,11 @@ class DiscordBot(commands.Bot):
                         if int(bank_amount) >= int(5e6):
                             print(f"rob myself initiated with bank [{bank_amount}]")
                             await send_text(self, LOG_CH, f"Gained 5MIL from {self.user}")
+                            await self.toggle_heist(input_value =False)
+                            self.robbing = True
+                            await send_text(self, CH_DEP, f"self robbing is now {self.robbing}")
+                            # Sleep for 5 seconds and begin operation
                             await asyncio.sleep(5.0)
-                            self.unheisted = False
-                            
                             await send_text(self, MAIN_CH_DEP, f">mina_rob {CH_DEP}")
                         else: await send_text(self, CH_DEP, f"not robbing self, bank amount {bank_amount} < {int(5e6)}")
             else:
@@ -118,7 +126,7 @@ class DiscordBot(commands.Bot):
         if message.author == self.user:
             if message.channel.id == CH_DEP:
                 if message.content.startswith(">toggle heist"):
-                    await self.toggle_heist
+                    await self.toggle_heist()
                 if message.content.startswith(">rob"):
                     await self.rob_myself()
             return
@@ -133,8 +141,8 @@ class DiscordBot(commands.Bot):
             ## RECEIVED MONEY FROM HEIST
             if message.content.startswith("Amazing job everybody"):
                 await self.rob_myself()
-                    
-                
+            
+            
             embeds = message.embeds
             compos = message.components
             if in_dms(message):
@@ -167,8 +175,8 @@ class DiscordBot(commands.Bot):
                     
                     if embed_title.lower().startswith("you have been given"):
                         await send_text(self, CH_DEP, "pls dep all")
-
             ## HEISTING OPERATION
+            # Not in dms
             elif len(compos)>0:
                 try:
                     if not any(hasattr(compo, 'label') for compo in compos[0].children):
@@ -180,7 +188,7 @@ class DiscordBot(commands.Bot):
                             index = labels.index(CONFIRMLABEL)
                             await message.components[0].children[index].click()
                     else:
-                        if self.unheisted and message.channel.guild.id not in NO_HEIST_SERVERS:
+                        if self.unheisted and message.guild.id not in NO_HEIST_SERVERS:
                             if HEISTLABEL in labels:
                                 # Find index
                                 index = labels.index(HEISTLABEL)
@@ -190,18 +198,17 @@ class DiscordBot(commands.Bot):
                                     print(f"{self.user} clicked on label - {HEISTLABEL}, \nJOINED HEIST at [{datetime.datetime.now().strftime('%H:%M')}]")
                                     
                                     # Toggle heist only if heist is activated
-                                    if self.unheisted: 
-                                        await self.toggle_heist
+                                    await self.toggle_heist(False)
                                     await asyncio.sleep(300)
                                     
-                                    # Toggle Heist only if heist is not active
-                                    if not self.unheisted: 
-                                        await self.toggle_heist
+                                    # Toggle Heist only if heist is not active 
+                                    await self.toggle_heist(True)
                                 else:
                                     print(f"Failed to join the heist at [{datetime.datetime.now().strftime('%H:%M')}]")
                         else:
                             return
                 except discord.errors.InvalidData: return
+            else: return
 
         elif message.channel.id == CH_DEP:
             if message.content is not None:
@@ -211,19 +218,33 @@ class DiscordBot(commands.Bot):
                     await check_buy_cases(self, CH_DEP, message)
                 if message.content.startswith(">check"):
                     await check_check_cases(self, CH_DEP, message)
+                if message.content.startswith(">selfrob false"):
+                    self.robbing = False
+                    await send_text(self, CH_DEP, f"Self robbing is now {self.robbing}")
                 if message.content.startswith(">toggle heist"):
-                    await self.toggle_heist
+                    lst_content = message.content.split(" ")
+                    if len(lst_content) > 2:
+                        t_or_false = lst_content[2].lower() in ("yes", "true", "t", "1")
+                        await self.toggle_heist(t_or_false)
+                    else:
+                        await self.toggle_heist()
                 if message.content.startswith(">deposit"):
                     await with_dep_msg(self, CH_DEP, "pls dep all")
                 if message.content.startswith(">withdraw"):
                     await with_dep_msg(self, CH_DEP, "pls with all")
                     await with_dep_msg(self, CH_DEP, "pls dep 50k")
                     await send_text(self, CH_DEP, ">steal me")
+                
                 # We're always going to be BananaJuic3, when this command is sent.
                 if message.content.startswith(">mina_rob"):
                     print("robbing")
+                    await self.toggle_heist(False)
+                    self.robbing = True
                     rob_channel = int(str(message.content).split(" ")[1])
                     await rob_my_alt(self, rob_channel, alt_aut = message.author)
+                    self.robbing = False
+                    await self.toggle_heist(True)
+                    
         else:
             return
 
