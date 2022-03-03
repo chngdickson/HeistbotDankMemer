@@ -1,5 +1,5 @@
-token : "MjcxMjU5MTY3NzMyNDAwMTI4.XwRfhA.wC253kC3qvKAZ_1Opa1aUyzhg7s"
-channel_to_dep : 939050791484919850
-main_account_channel : 939050791484919850
-log_channel : 948175512314970122
-# Banana Juic3
+token : #Token of your alt
+channel_to_dep : #text channel to run ur alt
+main_account_channel : # Main account channel
+log_channel : # any channel to log
+# Note: all 3 channels can be the same, if it's the token of your main account.
